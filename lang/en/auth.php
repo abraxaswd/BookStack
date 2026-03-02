@@ -81,10 +81,6 @@ return [
     'user_invite_success_login' => 'Password set, you should now be able to login using your set password to access :appName!',
 
     // Multi-factor Authentication
-    // OIDC Email Prompt
-    'oidc_email_prompt_title' => 'Provide Your Email',
-    'oidc_email_prompt_desc' => 'Your identity provider did not supply an email address. Please enter an email to use for this account.',
-
     'mfa_setup' => 'Setup Multi-Factor Authentication',
     'mfa_setup_desc' => 'Setup multi-factor authentication as an extra layer of security for your user account.',
     'mfa_setup_configured' => 'Already configured',
@@ -118,4 +114,9 @@ return [
     'mfa_verify_backup_code_enter_here' => 'Enter backup code here',
     'mfa_verify_totp_desc' => 'Enter the code, generated using your mobile app, below:',
     'mfa_setup_login_notification' => 'Multi-factor method configured, Please now login again using the configured method.',
+
+    // OIDC Email Prompt
+    'oidc_email_prompt_title' => 'Provide Your Email',
+    'oidc_email_prompt_desc' => 'Your identity provider did not supply an email address. Please enter an email to use for this account.',
+
 ];
