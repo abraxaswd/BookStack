@@ -238,16 +238,54 @@ class OidcTest extends TestCase
         $this->assertFalse(auth()->check());
     }
 
-    public function test_auth_fails_if_no_email_exists_in_user_data()
+    public function test_auth_redirects_to_email_prompt_if_no_email_in_user_data()
+    {
+        config()->set('oidc.userinfo_endpoint', null);
+
+        $resp = $this->runLogin([
+            'email' => '',
+            'sub'   => 'benny505',
+            'name'  => 'Benny',
+        ]);
+
+        $resp->assertRedirect('/oidc/email');
+        $this->assertTrue(session()->has('oidc_pending_user_details'));
+    }
+
+    public function test_oidc_email_prompt_submitting_email_completes_login()
     {
         config()->set('oidc.userinfo_endpoint', null);
 
         $this->runLogin([
             'email' => '',
             'sub'   => 'benny505',
+            'name'  => 'Benny',
         ]);
 
-        $this->assertSessionError('Could not find an email address, for this user, in the data provided by the external authentication system');
+        $resp = $this->post('/oidc/email', ['email' => 'benny@example.com']);
+        $resp->assertRedirect('/');
+        $this->assertTrue(auth()->check());
+        $this->assertDatabaseHas('users', ['email' => 'benny@example.com', 'name' => 'Benny']);
+    }
+
+    public function test_oidc_email_prompt_without_session_state_redirects_to_login()
+    {
+        $resp = $this->get('/oidc/email');
+        $resp->assertRedirect('/login');
+    }
+
+    public function test_oidc_email_prompt_validates_email_format()
+    {
+        config()->set('oidc.userinfo_endpoint', null);
+
+        $this->runLogin([
+            'email' => '',
+            'sub'   => 'benny505',
+            'name'  => 'Benny',
+        ]);
+
+        $resp = $this->post('/oidc/email', ['email' => 'not-an-email']);
+        $resp->assertSessionHasErrors(['email']);
     }
 
     public function test_auth_fails_if_already_logged_in()

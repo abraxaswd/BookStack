@@ -359,6 +359,8 @@ Route::get('/saml2/acs', [AccessControllers\Saml2Controller::class, 'processAcs'
 // OIDC routes
 Route::post('/oidc/login', [AccessControllers\OidcController::class, 'login']);
 Route::get('/oidc/callback', [AccessControllers\OidcController::class, 'callback']);
+Route::get('/oidc/email', [AccessControllers\OidcController::class, 'showEmailForm']);
+Route::post('/oidc/email', [AccessControllers\OidcController::class, 'submitEmail']);
 Route::post('/oidc/logout', [AccessControllers\OidcController::class, 'logout']);
 
 // User invitation routes

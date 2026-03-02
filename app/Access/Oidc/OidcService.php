@@ -6,6 +6,7 @@ use BookStack\Access\GroupSyncService;
 use BookStack\Access\LoginService;
 use BookStack\Access\RegistrationService;
 use BookStack\Exceptions\JsonDebugException;
+use BookStack\Exceptions\OidcEmailRequestException;
 use BookStack\Exceptions\StoppedAuthenticationException;
 use BookStack\Exceptions\UserRegistrationException;
 use BookStack\Facades\Theme;
@@ -165,6 +166,7 @@ class OidcService
      * they exist, optionally registering them automatically.
      *
      * @throws OidcException
+     * @throws OidcEmailRequestException
      * @throws JsonDebugException
      * @throws StoppedAuthenticationException
      */
@@ -201,8 +203,56 @@ class OidcService
 
         $userDetails = $this->getUserDetailsFromToken($idToken, $accessToken, $settings);
         if (empty($userDetails->email)) {
-            throw new OidcException(trans('errors.oidc_no_email_address'));
+            session()->put('oidc_pending_user_details', [
+                'externalId' => $userDetails->externalId,
+                'name'       => $userDetails->name,
+                'groups'     => $userDetails->groups,
+                'picture'    => $userDetails->picture,
+            ]);
+
+            throw new OidcEmailRequestException();
         }
+
+        return $this->loginUserFromDetails($userDetails);
+    }
+
+    /**
+     * Complete a pending OIDC login by setting the user-provided email.
+     * Pulls the stored user details from session and finishes the login flow.
+     *
+     * @throws OidcException
+     * @throws StoppedAuthenticationException
+     */
+    public function completeLoginWithEmail(string $email): User
+    {
+        $pending = session()->pull('oidc_pending_user_details');
+        if (!$pending) {
+            throw new OidcException(trans('errors.oidc_fail_authed', ['system' => config('oidc.name')]));
+        }
+
+        $userDetails = new OidcUserDetails(
+            externalId: $pending['externalId'],
+            email: $email,
+            name: $pending['name'],
+            groups: $pending['groups'],
+            picture: $pending['picture'],
+        );
+
+        if (empty($userDetails->name)) {
+            $userDetails->name = $userDetails->externalId;
+        }
+
+        return $this->loginUserFromDetails($userDetails);
+    }
+
+    /**
+     * Register/find the user from OIDC details, sync groups/avatar, and log in.
+     *
+     * @throws OidcException
+     * @throws StoppedAuthenticationException
+     */
+    protected function loginUserFromDetails(OidcUserDetails $userDetails): User
+    {
         if (empty($userDetails->name)) {
             $userDetails->name = $userDetails->externalId;
         }

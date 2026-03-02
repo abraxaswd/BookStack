@@ -4,6 +4,7 @@ namespace BookStack\Access\Controllers;
 
 use BookStack\Access\Oidc\OidcException;
 use BookStack\Access\Oidc\OidcService;
+use BookStack\Exceptions\OidcEmailRequestException;
 use BookStack\Http\Controller;
 use Illuminate\Http\Request;
 
@@ -56,8 +57,43 @@ class OidcController extends Controller
 
         try {
             $this->oidcService->processAuthorizeResponse($request->query('code'));
+        } catch (OidcEmailRequestException) {
+            return redirect('/oidc/email');
         } catch (OidcException $oidcException) {
             $this->showErrorNotification($oidcException->getMessage());
+
+            return redirect('/login');
+        }
+
+        return redirect()->intended();
+    }
+
+    /**
+     * Show the form to request an email address from the user
+     * when the OIDC provider did not supply one.
+     */
+    public function showEmailForm()
+    {
+        if (!session()->has('oidc_pending_user_details')) {
+            return redirect('/login');
+        }
+
+        return view('auth.oidc-email');
+    }
+
+    /**
+     * Handle the submitted email address for a pending OIDC login.
+     */
+    public function submitEmail(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        try {
+            $this->oidcService->completeLoginWithEmail($request->get('email'));
+        } catch (OidcException $exception) {
+            $this->showErrorNotification($exception->getMessage());
 
             return redirect('/login');
         }
