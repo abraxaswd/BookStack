@@ -203,14 +203,23 @@ class OidcService
 
         $userDetails = $this->getUserDetailsFromToken($idToken, $accessToken, $settings);
         if (empty($userDetails->email)) {
-            session()->put('oidc_pending_user_details', [
-                'externalId' => $userDetails->externalId,
-                'name'       => $userDetails->name,
-                'groups'     => $userDetails->groups,
-                'picture'    => $userDetails->picture,
-            ]);
+            // Check if user already exists by external ID (returning user)
+            $existingUser = User::query()
+                ->where('external_auth_id', '=', $userDetails->externalId)
+                ->first();
 
-            throw new OidcEmailRequestException();
+            if ($existingUser) {
+                $userDetails->email = $existingUser->email;
+            } else {
+                session()->put('oidc_pending_user_details', [
+                    'externalId' => $userDetails->externalId,
+                    'name'       => $userDetails->name,
+                    'groups'     => $userDetails->groups,
+                    'picture'    => $userDetails->picture,
+                ]);
+
+                throw new OidcEmailRequestException();
+            }
         }
 
         return $this->loginUserFromDetails($userDetails);

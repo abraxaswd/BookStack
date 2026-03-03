@@ -288,6 +288,30 @@ class OidcTest extends TestCase
         $resp->assertSessionHasErrors(['email']);
     }
 
+    public function test_oidc_no_email_skips_prompt_for_existing_user()
+    {
+        config()->set('oidc.userinfo_endpoint', null);
+
+        // First login with email to create the user
+        $this->runLogin([
+            'email' => 'benny@example.com',
+            'sub'   => 'benny505',
+            'name'  => 'Benny',
+        ]);
+        $this->assertTrue(auth()->check());
+        auth()->logout();
+
+        // Second login without email — should skip prompt and log in directly
+        $resp = $this->runLogin([
+            'email' => '',
+            'sub'   => 'benny505',
+            'name'  => 'Benny',
+        ]);
+
+        $resp->assertRedirect('/');
+        $this->assertTrue(auth()->check());
+    }
+
     public function test_auth_fails_if_already_logged_in()
     {
         $this->asEditor();
