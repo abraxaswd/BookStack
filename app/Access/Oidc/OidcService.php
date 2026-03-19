@@ -234,7 +234,7 @@ class OidcService
      */
     public function completeLoginWithEmail(string $email): User
     {
-        $pending = session()->pull('oidc_pending_user_details');
+        $pending = session()->get('oidc_pending_user_details');
         if (!$pending) {
             throw new OidcException(trans('errors.oidc_fail_authed', ['system' => config('oidc.name')]));
         }
@@ -247,11 +247,11 @@ class OidcService
             picture: $pending['picture'],
         );
 
-        if (empty($userDetails->name)) {
-            $userDetails->name = $userDetails->externalId;
-        }
+        $user = $this->loginUserFromDetails($userDetails);
 
-        return $this->loginUserFromDetails($userDetails);
+        session()->forget('oidc_pending_user_details');
+
+        return $user;
     }
 
     /**

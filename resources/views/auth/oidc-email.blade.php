@@ -15,7 +15,7 @@
                     @include('form.text', ['name' => 'email'])
                 </div>
 
-                <div class="from-group text-right mt-m">
+                <div class="form-group text-right mt-m">
                     <button class="button">{{ trans('common.confirm') }}</button>
                 </div>
             </form>
