@@ -82,6 +82,10 @@ Custom enhancement in `app/Access/Oidc/OidcService.php`:
 - Hard-code expected text/URLs in assertions rather than using dynamic references
 - All external HTTP/LDAP calls must be mocked
 
+## GitHub Account
+
+All GitHub operations (PRs, issues, comments, releases) must use the **AbraxasWD** account. Before running `gh` commands, verify the correct account is active (`gh auth status`). This ensures all actions are traceable and run under the correct responsibility.
+
 ## Commit Convention
 
 `TYPE: description` — e.g. `FEAT:`, `FIX:`, etc.
